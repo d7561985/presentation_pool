@@ -43,6 +43,10 @@ func (b *Bot) NextStep() error {
 		return fmt.Errorf("previouse step not completed")
 	}
 
+	if int(b.status.Step) >= len(b.vote.Steps) {
+		return fmt.Errorf("steps overlap")
+	}
+
 	b.status.Step++
 	b.status.Status = models.StatusInProgress
 

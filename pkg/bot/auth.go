@@ -11,6 +11,10 @@ import (
 // getUser
 // @return bool - when no further processing messages required
 func (b *Bot) getUser(req tgbotapi.Update) (*models.User, bool) {
+	if req.SentFrom() == nil {
+		return nil, false
+	}
+
 	id := fmt.Sprintf("%v", req.SentFrom().ID)
 	user, err := b.store.GetUser(id)
 	if err == nil {

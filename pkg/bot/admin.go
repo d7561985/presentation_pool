@@ -45,8 +45,11 @@ func (b *Bot) adminCommand(req tgbotapi.Update) tgbotapi.MessageConfig {
 		return b.msgShowStatus(req.FromChat().ID)
 	case "show":
 		return tgbotapi.NewMessage(req.FromChat().ID, "")
+	case "reload":
+		b.Load()
+		return tgbotapi.NewMessage(req.FromChat().ID, "OK")
 	default:
-		return tgbotapi.NewMessage(req.FromChat().ID, "unsupported command")
+		return tgbotapi.NewMessage(req.FromChat().ID, "unsupported command: start, complete, next, status, show")
 	}
 }
 

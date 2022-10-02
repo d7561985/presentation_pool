@@ -19,7 +19,7 @@ func (b *Bot) userHandlerMsg(req tgbotapi.Update, user *models.User) (tgbotapi.M
 	// command
 	if req.Message != nil && req.Message.IsCommand() { // ignore any non-command Messages
 		switch req.Message.Command() {
-		case "show":
+		case "show", "start":
 			return b.msgShowCurrentStepWindow(req.FromChat().ID)
 		default:
 			return tgbotapi.MessageConfig{}, ErrNotAllow

@@ -9,7 +9,6 @@ import (
 	"presentation_pool/pkg/models"
 	"regexp"
 	"strconv"
-	"strings"
 )
 
 var reg = regexp.MustCompile(`\S@\S+\.\S+`)
@@ -39,19 +38,30 @@ func New(token string, store *excel.Excel) (*Bot, error) {
 
 	log.Printf("Authorized on account %s", bot.Self.UserName)
 
-	status, err := store.GetStatus()
+	srv := &Bot{
+		api:   bot,
+		store: store,
+	}
+
+	srv.Load()
+
+	return srv, err
+}
+
+func (b *Bot) Load() {
+	status, err := b.store.GetStatus()
 	if err != nil {
 		log.Fatalf("cant get status: %v", err)
 	}
 
-	votes, err := store.GetAllVotes()
+	votes, err := b.store.GetAllVotes()
 	if err != nil {
 		log.Fatalf("cant get votes: %v", err)
 	}
 
 	// better change it as seet
 	var vote *models.Vote
-	if status.Status == models.StatusInProgress {
+	if status.Status == models.StatusInProgress || status.Status == models.StatusComplete {
 		for i, v := range votes {
 			if v.Name == status.VoteName {
 				vote = &votes[i]
@@ -63,15 +73,10 @@ func New(token string, store *excel.Excel) (*Bot, error) {
 		}
 	}
 
-	return &Bot{
-		api:    bot,
-		store:  store,
-		status: status,
-		votes:  votes,
-		vote:   vote,
-	}, nil
+	b.votes = votes
+	b.vote = vote
+	b.status = status
 }
-
 func (b *Bot) Run() {
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
@@ -81,28 +86,6 @@ func (b *Bot) Run() {
 	for update := range updates {
 		user, ok := b.getUser(update)
 		if !ok {
-
-		}
-
-		user, err := b.store.GetUser(fmt.Sprintf("%v", update.SentFrom().ID))
-		if err != nil {
-			/// check if user send email
-			if update.Message != nil {
-				email := strings.TrimSpace(update.Message.Text)
-
-				if emailValidation(email) {
-					u := ToUser(update.SentFrom(), email)
-					if err := b.store.SaveUser(u); err != nil {
-						log.Println("ERR: save error", err)
-					}
-
-					continue
-				}
-			}
-
-			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Please enter corporate email")
-			b.api.Send(msg)
-
 			continue
 		}
 
@@ -111,32 +94,35 @@ func (b *Bot) Run() {
 		if user.IsAdmin {
 			fmt.Println("is admin mode")
 			if msg = b.adminHandler(update); msg.Text != "" {
-				if _, err = b.api.Send(msg); err != nil {
+				if _, err := b.api.Send(msg); err != nil {
 					panic(err)
 				}
 			}
 		}
 
-		msg, err = b.userHandlerMsg(update, user)
+		msg, err := b.userHandlerMsg(update, user)
 		if err != nil {
 			log.Printf("ERR/userHandlerCallback: %v", err)
 			continue
 		}
 
 		if _, err = b.api.Send(msg); err != nil {
-			panic(err)
+			log.Printf("ERR/send: %v", err)
+			continue
 		}
 
 		// delete selection
 		if update.CallbackQuery != nil {
 			callback := tgbotapi.NewCallback(update.CallbackQuery.ID, update.CallbackQuery.Data)
 			if _, err := b.api.Request(callback); err != nil {
-				panic(err)
+				log.Printf("ERR/send: %v", err)
+				continue
 			}
 
 			m := tgbotapi.NewDeleteMessage(update.CallbackQuery.Message.Chat.ID, update.CallbackQuery.Message.MessageID)
 			if _, err = b.api.Request(m); err != nil {
-				panic(err)
+				log.Printf("ERR/send: %v", err)
+				continue
 			}
 		}
 	}

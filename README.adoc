@@ -1,10 +1,61 @@
 = Presentation bot
+Telegram bot using SheetOps approach where repo represent in spreadsheed table-set.
 
 == env
 
 .TELEGRAM_APITOKEN
-Provide telegramm token
+Provide telegram token
+
+.SERVICE_ACCOUNT_CREDENTIALS
+service account credentials for OAUTH2. Current service account should be added to spreadsheed as owner or editor
+
+.SHEET_ID
+spreadsheed identificator
+
+take look: https://developers.google.com/sheets/api/guides/concepts[doc]
+
+in development used: https://docs.google.com/spreadsheets/d/1s2EWBJUPQPYfX97oUfHfwZSasUnKXbDR7dcB-gu3wzE/edit#gid=0
 
 
-== Spredsheet
-https://docs.google.com/spreadsheets/d/1s2EWBJUPQPYfX97oUfHfwZSasUnKXbDR7dcB-gu3wzE/edit#gid=0
+== Preparation
+In spreadsheed should be some tables:
+
+format `settings_<VOTE_NAME>`:
+
+|===
+|Question |OPTION_1 |OPTION_2 |OPTION_3|OPTION_4
+
+|Question for acking
+|Option 1
+|Option 2
+|Option 3
+|Option 4
+
+|===
+
+== admin command
+For enable user as admin set cell value H:"TRUE" in at sheet "users" after user enters to the channel
+
+.start
+Show list of available votes from sheet `settings_*` and allow start first step of them
+
+.complete
+Stop current step
+
+.next
+If previous step was closes, run next
+
+.status
+Check current status of vote
+
+.show
+Show step window if in progress.
+
+.reload
+Reload votes settings
+
+== Ref
+* https://core.telegram.org/bots
+* https://go-telegram-bot-api.dev/
+* https://developers.google.com/sheets/api/quickstart/go
+* https://medium.com/@a.marenkov/how-to-get-credentials-for-google-sheets-456b7e88c430

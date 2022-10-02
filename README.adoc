@@ -1,0 +1,10 @@
+= Presentation bot
+
+== env
+
+.TELEGRAM_APITOKEN
+Provide telegramm token
+
+
+== Spredsheet
+https://docs.google.com/spreadsheets/d/1s2EWBJUPQPYfX97oUfHfwZSasUnKXbDR7dcB-gu3wzE/edit#gid=0

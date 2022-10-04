@@ -237,6 +237,10 @@ func (e *Excel) SaveUserVote(voteName string, step int64, question string, data 
 			e.saveVite(sheet, id, user, step, data)
 			return sheet.Synchronize()
 		}
+
+		if row[id].Value == "" {
+			break
+		}
 	}
 
 	e.saveVite(sheet, idx+1, user, step, data)

@@ -5,8 +5,15 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"log"
 	"presentation_pool/pkg/models"
+	"regexp"
 	"strings"
 )
+
+var reg = regexp.MustCompile(`\S@\S+\.\S+`)
+
+func emailValidation(email string) bool {
+	return reg.MatchString(email)
+}
 
 // getUser
 // @return bool - when no further processing messages required
@@ -31,7 +38,7 @@ func (b *Bot) getUser(req tgbotapi.Update) (*models.User, bool) {
 	if req.Message != nil {
 		email := strings.TrimSpace(req.Message.Text)
 
-		if emailValidation(email) {
+		if emailValidation(email) && strings.Contains(email, b.cfg.AuthRule) {
 			u := ToUser(req.SentFrom(), email)
 			if err = b.store.SaveUser(u); err != nil {
 				log.Println("ERR: save error", err)

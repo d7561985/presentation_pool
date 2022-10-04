@@ -16,6 +16,8 @@ take look: https://developers.google.com/sheets/api/guides/concepts[doc]
 
 in development used: https://docs.google.com/spreadsheets/d/1s2EWBJUPQPYfX97oUfHfwZSasUnKXbDR7dcB-gu3wzE/edit#gid=0
 
+.EMAIL_PATTERN
+Part of email which required to be presented in email (check if user use corporate email)
 
 == Preparation
 In spreadsheed should be some tables:

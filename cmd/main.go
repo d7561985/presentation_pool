@@ -18,7 +18,12 @@ func main() {
 		log.Fatalf("Unable to retrieve Sheets client: %v", err)
 	}
 
-	service, err := bot2.New(os.Getenv("TELEGRAM_APITOKEN"), store)
+	cfg := bot2.Cfg{
+		Token:    os.Getenv("TELEGRAM_APITOKEN"),
+		AuthRule: os.Getenv("EMAIL_PATTERN"),
+	}
+
+	service, err := bot2.New(cfg, store)
 	if err != nil {
 		log.Fatalf("start bot: %v", err)
 	}

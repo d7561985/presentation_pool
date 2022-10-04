@@ -18,8 +18,8 @@ func (b *Bot) adminHandler(req tgbotapi.Update) tgbotapi.MessageConfig {
 	switch b.status.Status {
 	case models.StatusInProgress:
 		return tgbotapi.NewMessage(req.FromChat().ID, "")
-	case models.StatusComplete:
-		return tgbotapi.NewMessage(req.FromChat().ID, "")
+	//case models.StatusComplete:
+	//	return tgbotapi.NewMessage(req.FromChat().ID, "")
 	default:
 		return b.adminHandleVotes(req)
 	}

@@ -7,15 +7,8 @@ import (
 	"log"
 	"presentation_pool/pkg/excel"
 	"presentation_pool/pkg/models"
-	"regexp"
 	"strconv"
 )
-
-var reg = regexp.MustCompile(`\S@\S+\.\S+`)
-
-func emailValidation(email string) bool {
-	return reg.MatchString(email)
-}
 
 type Bot struct {
 	api   *tgbotapi.BotAPI
@@ -26,10 +19,19 @@ type Bot struct {
 	vote   *models.Vote
 
 	votes []models.Vote
+
+	cfg Cfg
 }
 
-func New(token string, store *excel.Excel) (*Bot, error) {
-	bot, err := tgbotapi.NewBotAPI(token)
+type Cfg struct {
+	Token string
+
+	// AuthRule required contain
+	AuthRule string
+}
+
+func New(cfg Cfg, store *excel.Excel) (*Bot, error) {
+	bot, err := tgbotapi.NewBotAPI(cfg.Token)
 	if err != nil {
 		return nil, errors.WithMessagef(err, "creation bot api")
 	}
@@ -41,6 +43,7 @@ func New(token string, store *excel.Excel) (*Bot, error) {
 	srv := &Bot{
 		api:   bot,
 		store: store,
+		cfg:   cfg,
 	}
 
 	srv.Load()
@@ -160,6 +163,10 @@ func (b *Bot) msgShowCurrentStepWindow(chatID int64) (tgbotapi.MessageConfig, er
 	var x [][]tgbotapi.InlineKeyboardButton
 
 	for _, s := range step.Option {
+		if s == "" {
+			continue
+		}
+
 		v := tgbotapi.NewInlineKeyboardButtonData(s, s)
 		x = append(x, []tgbotapi.InlineKeyboardButton{v})
 	}

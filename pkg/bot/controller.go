@@ -7,10 +7,6 @@ import (
 )
 
 func (b *Bot) StartStep(vote *models.Vote) error {
-	if int(b.status.Step) >= len(vote.Steps) {
-		return fmt.Errorf("vote %q contain wrong num: %d", vote.Name, len(vote.Steps))
-	}
-
 	b.status.VoteName = vote.Name
 	b.status.Status = models.StatusInProgress
 	b.vote = vote

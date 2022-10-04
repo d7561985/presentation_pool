@@ -39,7 +39,7 @@ func (b *Bot) userHandlerCallback(req tgbotapi.Update, user *models.User) (strin
 		return "", ErrNotAllow
 	}
 
-	if b.vote == nil {
+	if b.vote == nil || int(b.status.Step) >= len(b.vote.Steps) {
 		return "", errors.WithStack(ErrInternal)
 	}
 

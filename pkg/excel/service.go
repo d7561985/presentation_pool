@@ -230,24 +230,25 @@ func (e *Excel) SaveUserVote(voteName string, step int64, question string, data 
 
 	var idx = 1
 
-	for id, row := range sheet.Rows[1:] {
+	for id, col := range sheet.Rows[1:] {
 		idx = id
 
-		if row[id].Value == user.Email {
-			e.saveVite(sheet, id, user, step, data)
+		// 0-  email
+		if col[0].Value == user.Email {
+			e.saveVite(sheet, id+1, user, int(step+1), data)
 			return sheet.Synchronize()
 		}
 
-		if row[id].Value == "" {
+		if col[0].Value == "" {
 			break
 		}
 	}
 
-	e.saveVite(sheet, idx+1, user, step, data)
+	e.saveVite(sheet, idx+1, user, int(step+1), data)
 	return sheet.Synchronize()
 }
 
-func (e *Excel) saveVite(sheet *spreadsheet.Sheet, id int, user *models.User, step int64, data string) {
+func (e *Excel) saveVite(sheet *spreadsheet.Sheet, id int, user *models.User, step int, data string) {
 	sheet.Update(id, 0, user.Email)
-	sheet.Update(id, int(step+1), data)
+	sheet.Update(id, step, data)
 }

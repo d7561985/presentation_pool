@@ -129,7 +129,7 @@ func (e *Excel) GetAllVotes() ([]models.Vote, error) {
 		}
 
 		vote := models.Vote{
-			Name:  strings.Trim(sh.Properties.Title, settingSuffix),
+			Name:  strings.TrimPrefix(sh.Properties.Title, settingSuffix),
 			Steps: nil,
 		}
 

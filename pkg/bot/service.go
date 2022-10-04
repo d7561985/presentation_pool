@@ -162,12 +162,12 @@ func (b *Bot) msgShowCurrentStepWindow(chatID int64) (tgbotapi.MessageConfig, er
 	var step = b.vote.Steps[b.status.Step]
 	var x [][]tgbotapi.InlineKeyboardButton
 
-	for _, s := range step.Option {
+	for id, s := range step.Option {
 		if s == "" {
 			continue
 		}
 
-		v := tgbotapi.NewInlineKeyboardButtonData(s, s)
+		v := tgbotapi.NewInlineKeyboardButtonData(s, fmt.Sprintf("%d", id))
 		x = append(x, []tgbotapi.InlineKeyboardButton{v})
 	}
 

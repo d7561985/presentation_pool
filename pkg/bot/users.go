@@ -1,6 +1,7 @@
 package bot
 
 import (
+	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/pkg/errors"
 	"presentation_pool/pkg/models"
@@ -49,19 +50,20 @@ func (b *Bot) userHandlerCallback(req tgbotapi.Update, user *models.User) (strin
 		return "wrong question", nil
 	}
 
-	var ok bool
+	var answer string
 
-	for _, s := range step.Option {
-		if s == req.CallbackData() {
-			ok = true
+	for id, a := range step.Option {
+		if fmt.Sprintf("%d", id) == req.CallbackData() {
+			answer = a
+			break
 		}
 	}
 
-	if !ok {
+	if answer == "" {
 		return "cant find option", nil
 	}
 
-	if err := b.store.SaveUserVote(b.vote.Name, b.status.Step, step.Question, req.CallbackData(), user); err != nil {
+	if err := b.store.SaveUserVote(b.vote.Name, b.status.Step, step.Question, answer, user); err != nil {
 		return "", errors.WithStack(err)
 	}
 

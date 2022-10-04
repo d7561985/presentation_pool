@@ -228,16 +228,18 @@ func (e *Excel) SaveUserVote(voteName string, step int64, question string, data 
 
 	sheet.Update(0, int(step+1), question)
 
-	for id, row := range sheet.Rows {
-		if row[0].Value == user.Email {
+	var idx = 1
+
+	for id, row := range sheet.Rows[1:] {
+		idx = id
+
+		if row[id].Value == user.Email {
 			e.saveVite(sheet, id, user, step, data)
 			return sheet.Synchronize()
 		}
 	}
 
-	id := len(sheet.Rows)
-
-	e.saveVite(sheet, id, user, step, data)
+	e.saveVite(sheet, idx+1, user, step, data)
 	return sheet.Synchronize()
 }
 

@@ -5,6 +5,7 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/pkg/errors"
 	"presentation_pool/pkg/models"
+	"strings"
 )
 
 var (
@@ -46,7 +47,7 @@ func (b *Bot) userHandlerCallback(req tgbotapi.Update, user *models.User) (strin
 
 	var step = b.vote.Steps[b.status.Step]
 
-	if req.CallbackQuery.Message.Text != step.Question {
+	if req.CallbackQuery.Message.Text != strings.TrimSpace(step.Question) {
 		return "wrong question", nil
 	}
 

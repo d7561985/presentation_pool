@@ -3,7 +3,7 @@ package bot
 import (
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"log"
+	"github.com/pkg/errors"
 	"presentation_pool/pkg/models"
 	"regexp"
 	"strings"
@@ -15,45 +15,36 @@ func emailValidation(email string) bool {
 	return reg.MatchString(email)
 }
 
-// getUser
-// @return bool - when no further processing messages required
-func (b *Bot) getUser(req tgbotapi.Update) (*models.User, bool) {
-	if req.SentFrom() == nil {
-		return nil, false
-	}
-
+func (b *Bot) auth(req tgbotapi.Update) (*models.User, error) {
 	id := fmt.Sprintf("%v", req.SentFrom().ID)
 	user, err := b.store.GetUser(id)
-	if err == nil {
-		return user, true
-	}
 
-	msg := tgbotapi.NewMessage(req.Message.Chat.ID, "Please enter corporate email")
+	return user, errors.WithStack(err)
+}
 
-	defer func() {
-		_, _ = b.api.Send(msg)
-	}()
-
+// getUser
+// @return bool - when no further processing messages required
+func (b *Bot) authHandle(req tgbotapi.Update) (tgbotapi.Chattable, error) {
 	/// check if user send email
-	if req.Message != nil {
-		email := strings.TrimSpace(req.Message.Text)
-
-		if emailValidation(email) && strings.Contains(email, b.cfg.AuthRule) {
-			u := ToUser(req.SentFrom(), email)
-			if err = b.store.SaveUser(u); err != nil {
-				log.Println("ERR: save error", err)
-				return nil, false
-			}
-
-			// OK
-			if b.status.Status == models.StatusInProgress {
-				msg, err = b.msgShowCurrentStepWindow(req.Message.Chat.ID)
-				_, _ = b.api.Send(msg)
-				return nil, false
-			}
-
-		}
+	if req.Message == nil {
+		return tgbotapi.NewMessage(req.FromChat().ID, "Please enter corporate email"), nil
 	}
 
-	return nil, false
+	email := strings.TrimSpace(req.Message.Text)
+
+	if !emailValidation(email) || !strings.Contains(email, b.cfg.AuthRule) {
+		return tgbotapi.NewMessage(req.FromChat().ID, fmt.Sprintf("Please enter corporate email [input was: %q]", email)), nil
+	}
+
+	u := ToUser(req.SentFrom(), email)
+	if err := b.store.SaveUser(u); err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	// OK
+	if b.status.Status == models.StatusInProgress {
+		return b.msgShowCurrentStepWindow(req.FromChat().ID)
+	}
+
+	return tgbotapi.NewMessage(req.Message.Chat.ID, "Hi there! Please wait of QUIZ launching."), nil
 }

@@ -13,42 +13,46 @@ var (
 	ErrInternal = errors.New("internal issue")
 )
 
-func (b *Bot) userHandlerMsg(req tgbotapi.Update, user *models.User) (tgbotapi.MessageConfig, error) {
+func (b *Bot) userHandlerMsg(req tgbotapi.Update, user *models.User) (tgbotapi.Chattable, error) {
 	if b.status.Status != models.StatusInProgress {
 		return tgbotapi.NewMessage(req.FromChat().ID, "vote doesn't in progress"), nil
 	}
 
 	// command
 	if req.Message != nil && req.Message.IsCommand() { // ignore any non-command Messages
-		switch req.Message.Command() {
-		case "show", "start":
-			return b.msgShowCurrentStepWindow(req.FromChat().ID)
-		default:
-			return tgbotapi.MessageConfig{}, ErrNotAllow
-		}
+		return b.userCommand(req)
 	}
 
-	txt, err := b.userHandlerCallback(req, user)
-	if err != nil {
-		return tgbotapi.MessageConfig{}, err
-	}
-
-	return tgbotapi.NewMessage(req.FromChat().ID, txt), nil
+	msg, err := b.userHandlerCallback(req, user)
+	return msg, errors.WithStack(err)
 }
 
-func (b *Bot) userHandlerCallback(req tgbotapi.Update, user *models.User) (string, error) {
+func (b *Bot) userCommand(req tgbotapi.Update) (tgbotapi.Chattable, error) {
+	switch req.Message.Command() {
+	case "show", "start":
+		return b.msgShowCurrentStepWindow(req.FromChat().ID)
+	default:
+		return tgbotapi.MessageConfig{}, ErrNotAllow
+	}
+}
+
+func (b *Bot) userHandlerCallback(req tgbotapi.Update, user *models.User) (tgbotapi.Chattable, error) {
 	if req.CallbackQuery == nil {
-		return "", ErrNotAllow
+		return nil, ErrNotAllow
+	}
+
+	if b.status.Status != models.StatusInProgress {
+		return tgbotapi.NewMessage(req.FromChat().ID, "vote doesn't in progress"), nil
 	}
 
 	if b.vote == nil || int(b.status.Step) >= len(b.vote.Steps) {
-		return "", errors.WithStack(ErrInternal)
+		return nil, errors.WithStack(ErrInternal)
 	}
 
 	var step = b.vote.Steps[b.status.Step]
 
 	if req.CallbackQuery.Message.Text != strings.TrimSpace(step.Question) {
-		return "wrong question", nil
+		return tgbotapi.NewMessage(req.FromChat().ID, "wrong question"), nil
 	}
 
 	var answer string
@@ -61,13 +65,12 @@ func (b *Bot) userHandlerCallback(req tgbotapi.Update, user *models.User) (strin
 	}
 
 	if answer == "" {
-		return "cant find option", nil
+		return tgbotapi.NewMessage(req.FromChat().ID, "cant find option"), nil
 	}
 
 	if err := b.store.SaveUserVote(b.vote.Name, b.status.Step, step.Question, answer, user); err != nil {
-		return "", errors.WithStack(err)
+		return nil, errors.WithStack(err)
 	}
 
-	return "Thank you for your answering!!!", nil
-
+	return tgbotapi.NewMessage(req.FromChat().ID, "Thank you for your answering!!!"), nil
 }

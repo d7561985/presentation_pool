@@ -9,6 +9,7 @@ import (
 	"presentation_pool/pkg/api"
 	bot2 "presentation_pool/pkg/bot"
 	"presentation_pool/pkg/excel"
+	"strconv"
 )
 
 func main() {
@@ -30,7 +31,16 @@ func main() {
 		Msg:      msg,
 	}, store)
 
-	server, err := api.New(os.Getenv("TELEGRAM_APITOKEN"), controller)
+	// ignore parse bool issue
+	isWH, _ := strconv.ParseBool(os.Getenv("IS_WEBHOOK"))
+
+	x := api.Cfg{
+		Token: os.Getenv("TELEGRAM_APITOKEN"),
+		IsWH:  isWH,
+		Host:  os.Getenv("WEBHOOK_ADDR"),
+	}
+
+	server, err := api.New(x, controller)
 	if err != nil {
 		log.Fatalf("start api: %v", err)
 	}

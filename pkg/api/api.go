@@ -54,7 +54,7 @@ func New(cfg Cfg, bot *bot.Bot) (*API, error) {
 
 func (b *API) WebhookInit() {
 	// "https://www.example.com:8443/"
-	adddr := fmt.Sprintf("%s:%s/", b.cfg.Host, port)
+	adddr := fmt.Sprintf("%s/", b.cfg.Host)
 	wh, err := tgbotapi.NewWebhook(adddr + b.api.Token)
 	if err != nil {
 		log.Fatalf("new webhook %v", err)
@@ -77,7 +77,7 @@ func (b *API) WebhookInit() {
 	go http.ListenAndServe("0.0.0.0:"+port, nil)
 }
 
-func (b *API) getUpdate() tgbotapi.UpdatesChannel {
+func (b *API) GetUpdate() tgbotapi.UpdatesChannel {
 	if b.cfg.IsWH {
 		b.cb.Do(func() {
 			b.WebhookInit()
@@ -92,38 +92,37 @@ func (b *API) getUpdate() tgbotapi.UpdatesChannel {
 	return b.api.GetUpdatesChan(u)
 }
 
-func (b *API) Run() {
-	u := tgbotapi.NewUpdate(0)
-	u.Timeout = 60
-
-	updates := b.getUpdate()
-
+func (b *API) Run(updates tgbotapi.UpdatesChannel) {
 	for update := range updates {
-		if update.CallbackQuery != nil {
-			callback := tgbotapi.NewCallback(update.CallbackQuery.ID, update.CallbackQuery.Data)
-			if _, err := b.api.Request(callback); err != nil {
-				log.Printf("ERR/send: %v", err)
-				continue
-			}
-		}
+		b.Process(update)
+	}
+}
 
-		msg, err := b.bot.Handle(update)
-		if err != nil {
-			log.Printf("ERR/handle: %v", err)
-			continue
-		}
-
-		if _, err = b.api.Send(msg); err != nil {
+func (b *API) Process(update tgbotapi.Update) {
+	if update.CallbackQuery != nil {
+		callback := tgbotapi.NewCallback(update.CallbackQuery.ID, update.CallbackQuery.Data)
+		if _, err := b.api.Request(callback); err != nil {
 			log.Printf("ERR/send: %v", err)
-			continue
+			return
 		}
+	}
 
-		if update.CallbackQuery != nil {
-			m := tgbotapi.NewDeleteMessage(update.CallbackQuery.Message.Chat.ID, update.CallbackQuery.Message.MessageID)
-			if _, err := b.api.Request(m); err != nil {
-				log.Printf("ERR/send: %v", err)
-				continue
-			}
+	msg, err := b.bot.Handle(update)
+	if err != nil {
+		log.Printf("ERR/handle: %v", err)
+		return
+	}
+
+	if _, err = b.api.Send(msg); err != nil {
+		log.Printf("ERR/send: %v", err)
+		return
+	}
+
+	if update.CallbackQuery != nil {
+		m := tgbotapi.NewDeleteMessage(update.CallbackQuery.Message.Chat.ID, update.CallbackQuery.Message.MessageID)
+		if _, err := b.api.Request(m); err != nil {
+			log.Printf("ERR/send: %v", err)
+			return
 		}
 	}
 }

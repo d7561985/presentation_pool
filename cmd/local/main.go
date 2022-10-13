@@ -47,6 +47,5 @@ func main() {
 
 	go server.BroadcastWorker(msg)
 
-	server.Run()
-
+	server.Run(server.GetUpdate())
 }
